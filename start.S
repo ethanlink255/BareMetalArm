@@ -1,7 +1,6 @@
 .section ".text.boot"
 
-.globl _start
-//.align 2
+.global _start
 
 _start:
 	mrs	x1, mpidr_el1 //Register contains ID stuff, bits 7:0 identifies threads
