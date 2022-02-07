@@ -51,8 +51,35 @@ void uart_init()
 					CLEARS 15, 14
 				 */
 	*GPFSEL1 = r;
-	*GPPUD = 0; //pin up down enable 15, 14
+	*GPPUD = 0; //pin up down enable 15, 14 0 => Disable Pull Up Down
 	r = 150; while(r--) { asm volatile("nop"); } //wait 150 clock cycles (maybe)
-	*GPPUDCLK0 =
+	*GPPUDCLK0 = 0; //Flush setup
+	*AUX_MU_CNTL = 3; //Receiver and transmit enabled 11
 
+}
 
+void uart_send(unsigned int c){
+	do{ asm volatile("nop"); } while(!(*AUX_MU_LSR&0x20)); /* Line Status Register
+									0x20 => 0010,0000
+									Mask for bit 6, that
+									will be 1 when trans empty
+							       */
+	*AUX_MU_IO = c;
+}
+
+char uart_getc(){
+	char r;
+	do{ asm volatile("nop"); } while(!(*AUX_MU_LSR&0x1)); // Mask for 0th bit Data Ready
+
+	r = (char)(*AUX_MU_IO);
+	return r == '\r'?'\n':r;
+}
+
+void uart_puts(char *s){
+	while (*s){
+		if (*s == "\n"){
+			uart_send('\r');
+		}
+		uart_send(*s++);
+	}
+}
